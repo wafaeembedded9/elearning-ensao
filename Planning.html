@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Planning Professeur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/commun.css">
+  <link rel="stylesheet" href="css/style5.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">OSSL Learning</a>
+    <div class="collapse navbar-collapse justify-content-end">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="index.html">Accueil</a></li>
+        <li class="nav-item"><a class="nav-link active" href="Planning">Planning</a></li>
+        <li class="nav-item"><a class="nav-link" href="index.html">Déconnexion</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <h2 class="text-center">Ajouter un cours</h2>
+  
+  <!-- Zone d'alerte Bootstrap -->
+  <div id="alertZone" class="alert d-none mt-3" role="alert"></div>
+
+  <form id="form-cours" class="card p-4 mt-4 shadow-sm">
+    <div class="mb-3">
+      <label for="nomCours" class="form-label">Nom du cours</label>
+      <input type="text" class="form-control" id="nomCours" required>
+    </div>
+    <div class="mb-3">
+      <label for="dateCours" class="form-label">Date</label>
+      <input type="date" class="form-control" id="dateCours" required>
+    </div>
+    <div class="mb-3 row">
+      <div class="col">
+        <label for="heureDebut" class="form-label">Heure de début</label>
+        <input type="time" class="form-control" id="heureDebut" required>
+      </div>
+      <div class="col">
+        <label for="heureFin" class="form-label">Heure de fin</label>
+        <input type="time" class="form-control" id="heureFin" required>
+      </div>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+      <button type="reset" class="btn btn-outline-secondary">Annuler</button>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+
+  <h2 class="text-center mt-5">Cours programmés</h2>
+  <div class="card p-4 mt-3 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-bordered text-center">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Date</th>
+            <th>Début</th>
+            <th>Fin</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-cours"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- JS: gestion du planning -->
+<script>
+  const form = document.getElementById('form-cours');
+  const table = document.getElementById('table-cours');
+  const alertZone = document.getElementById('alertZone');
+  let editingIndex = -1;
+
+  function getCours() {
+    return JSON.parse(localStorage.getItem('cours')) || [];
+  }
+
+  function saveCours(data) {
+    localStorage.setItem('cours', JSON.stringify(data));
+  }
+
+  function displayAlert(message, type = "success") {
+    alertZone.className = `alert alert-${type}`;
+    alertZone.innerText = message;
+    alertZone.classList.remove("d-none");
+    setTimeout(() => alertZone.classList.add("d-none"), 3000);
+  }
+
+  function displayCours() {
+    const data = getCours();
+    table.innerHTML = '';
+    data.forEach((cours, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${cours.nom}</td>
+        <td>${cours.date}</td>
+        <td>${cours.debut}</td>
+        <td>${cours.fin}</td>
+        <td>
+          <button class="btn btn-warning btn-sm" onclick="editCours(${i})">Modifier</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCours(${i})">Supprimer</button>
+        </td>
+      `;
+      table.appendChild(tr);
+    });
+  }
+
+  form.onsubmit = function(e) {
+    e.preventDefault();
+    const nom = nomCours.value.trim();
+    const date = dateCours.value;
+    const debut = heureDebut.value;
+    const fin = heureFin.value;
+    const newCours = { nom, date, debut, fin };
+
+    if (!nom || !date || !debut || !fin) {
+      displayAlert("Veuillez remplir tous les champs", "danger");
+      return;
+    }
+
+    let data = getCours();
+    if (editingIndex === -1) {
+      data.push(newCours);
+      displayAlert("Cours ajouté !");
+    } else {
+      data[editingIndex] = newCours;
+      editingIndex = -1;
+      displayAlert("Cours modifié !");
+    }
+
+    saveCours(data);
+    form.reset();
+    displayCours();
+  }
+
+  function editCours(index) {
+    const cours = getCours()[index];
+    nomCours.value = cours.nom;
+    dateCours.value = cours.date;
+    heureDebut.value = cours.debut;
+    heureFin.value = cours.fin;
+    editingIndex = index;
+  }
+
+  function deleteCours(index) {
+    if (!confirm("Voulez-vous vraiment supprimer ce cours ?")) return;
+    let data = getCours();
+    data.splice(index, 1);
+    saveCours(data);
+    displayCours();
+    displayAlert("Cours supprimé", "warning");
+  }
+
+  function cleanExpiredCours() {
+    let data = getCours();
+    const now = new Date();
+    data = data.filter(cours => new Date(`${cours.date}T${cours.fin}`) > now);
+    saveCours(data);
+    displayCours();
+  }
+
+  setInterval(cleanExpiredCours, 60000);
+  window.onload = () => {
+    cleanExpiredCours();
+    displayCours();
+  };
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
