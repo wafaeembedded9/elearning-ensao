@@ -11,7 +11,7 @@ $etudiant_id = $_SESSION['etudiant_id'];
 $nom = $_SESSION['nom'] ?? 'Étudiant';
 $prenom = $_SESSION['prenom'] ?? '';
 
-// Récupérer les cours inscrits de l'étudiant
+
 $sql = "SELECT c.id, c.nom AS nom_cours, c.description, u.nom AS prof_nom, u.prenom AS prof_prenom 
         FROM inscriptions i
         JOIN cours c ON i.id_cours = c.id
