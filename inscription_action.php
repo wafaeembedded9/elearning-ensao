@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $mot_de_passe = $_POST['mot_de_passe_inscription'];
     $confirmation = $_POST['confirmation_mot_de_passe'];
 
-    // Validation des données
+    
     $erreurs = [];
 
     
